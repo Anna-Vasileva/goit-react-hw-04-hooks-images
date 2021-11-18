@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { useState, useEffect } from "react";
 import Searchbar from "./components/Searchbar";
 import ImageGallery from "./components/ImageGallery";
 import Button from "./components/Button";
@@ -7,125 +7,191 @@ import Loader from "./components/Loader";
 import Modal from "./components/Modal";
 import mapper from "./helpers/mapper";
 
-const INITIAL_STATE = { page: 1, gallery: null };
 const KEY = "23417274-c745cca46d265f1806e9566e8";
-// const apiKey = "a92e1c28ff5839246667e5b68c28f141";
-// const baseUrl = "https://api.themoviedb.org/3/trending/movie/day";
-class App extends Component {
-  state = {
-    ...INITIAL_STATE,
-    isLoading: false,
-    query: "",
-    showModal: false,
-    largeImageURL: "",
 
-    // showModal: true,
-  };
-  componentDidMount() {
-    // fetch(`${baseUrl}?api_key=${apiKey}&page=${this.state.page}`)
-    //   .then((res) => res.json())
-    //   .then((pictures) => this.setState({ gallery: pictures }));
-    // this.getImages();
-  }
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      // this.setState({ ...INITIAL_STATE, query: this.state.query });
-      this.getImages();
-    }
-    // if (prevState.page !== this.state.page) {
-    //   this.getImages();
-    // }
-    // if (prevState.showModal !== this.state.showModal) {
+function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState("");
+  const [page, setPage] = useState(1);
+  const [gallery, setGallery] = useState(null);
 
-    // }
-  }
-  changeInputData = (data) => {
-    this.setState({ ...INITIAL_STATE, query: data.inputData });
-  };
-  getImages = () => {
-    // if (!this.state.query) return;
-    this.setState({ isLoading: true });
+  useEffect(() => {
+    if (query === "") return;
+
+    setIsLoading(true);
     fetch(
-      `https://pixabay.com/api/?q=${this.state.query}&page=${this.state.page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
+      `https://pixabay.com/api/?q=${query}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
     )
       .then((res) => res.json())
       .then((pictures) => {
-        // console.log(this.state.page);
-        // console.log(this.state.gallery);
-        this.setState((prevState) => {
-          return !prevState.gallery
-            ? { gallery: mapper(pictures.hits) }
-            : { gallery: [...prevState.gallery, ...mapper(pictures.hits)] };
+        setGallery((prevGallery) => {
+          return !prevGallery
+            ? mapper(pictures.hits)
+            : [...prevGallery, ...mapper(pictures.hits)];
         });
       })
-      .catch((err) => {
+      .catch(() => {
         console.log("Что-то пошло не так");
       })
       .finally(() => {
-        // console.log('finally');
-        // console.log("finally", this.state.gallery);
-        this.setState({ isLoading: false });
-        if (this.state.page > 1) {
-          this.scroll();
+        setIsLoading(false);
+
+        if (page > 1) {
+          scroll();
         }
-        if (this.state.gallery.length === 0) {
-          this.setState({ ...INITIAL_STATE });
-        }
+        // if (gallery.length === 0) {
+        //   setPage(1);
+        //   setGallery(null);
+        // }
       });
+  }, [query, page]);
+
+  const changeInputData = (data) => {
+    setPage(1);
+    setGallery(null);
+    setQuery(data);
   };
-  incrementPage = () => {
-    let { page } = this.state;
-    page += 1;
-    this.setState({ page });
+  const incrementPage = () => {
+    setPage((prevPage) => prevPage + 1);
   };
-  toggleModal = () => {
-    // this.setState((showModal) => ({ showModal: !showModal }));
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  const toggleModal = () => {
+    setShowModal((prevShowModal) => !prevShowModal);
   };
-  onClickPicture = (e) => {
+  const onClickPicture = (e) => {
     const newLargeImageURL = e.currentTarget.getAttribute("data-large-img");
     if (e.currentTarget.hasAttribute("data-list")) {
-      this.toggleModal();
-      this.setState(() => ({
-        largeImageURL: newLargeImageURL,
-      }));
+      toggleModal();
+      setLargeImageURL(newLargeImageURL);
     }
   };
-  scroll = () => {
+  const scroll = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: "smooth",
     });
   };
-  render() {
-    const { isLoading, gallery, showModal, largeImageURL } = this.state;
-    return (
-      <>
-        <Searchbar onSubmit={this.changeInputData} />
 
-        {gallery && (
-          <ImageGallery
-            gallery={gallery}
-            onClickPicture={this.onClickPicture}
-          />
-        )}
-        {gallery && <Button onClick={this.incrementPage} />}
-        {isLoading && <Loader />}
-        {showModal && (
-          <Modal onClose={this.toggleModal}>
-            <img
-              // src="https://image.tmdb.org/t/p/w400/zZMebBIsNipjFhJFv0zjm0KQaBF.jpg"
-              src={largeImageURL}
-              alt="изображение pixabay"
-            />
-          </Modal>
-        )}
-      </>
-    );
-  }
+  return (
+    <>
+      <Searchbar onSubmit={changeInputData} />
+
+      {gallery && (
+        <ImageGallery gallery={gallery} onClickPicture={onClickPicture} />
+      )}
+      {gallery && <Button onClick={incrementPage} />}
+      {isLoading && <Loader />}
+      {showModal && (
+        <Modal onClose={toggleModal}>
+          <img src={largeImageURL} alt="изображение pixabay" />
+        </Modal>
+      )}
+    </>
+  );
 }
 
 export default App;
+
+// class OldApp extends Component {
+//   state = {
+//     ...INITIAL_STATE,
+//     isLoading: false,
+//     query: "",
+//     showModal: false,
+//     largeImageURL: "",
+//   };
+//   componentDidMount() {
+//   }
+//   componentDidUpdate(prevProps, prevState) {
+//     if (
+//       prevState.query !== this.state.query ||
+//       prevState.page !== this.state.page
+//     ) {
+//       this.getImages();
+//     }
+
+//   }
+//   changeInputData = (data) => {
+//     this.setState({ ...INITIAL_STATE, query: data.inputData });
+//   };
+//   getImages = () => {
+
+//     this.setState({ isLoading: true });
+//     fetch(
+//       `https://pixabay.com/api/?q=${this.state.query}&page=${this.state.page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
+//     )
+//       .then((res) => res.json())
+//       .then((pictures) => {
+
+//         this.setState((prevState) => {
+//           return !prevState.gallery
+//             ? { gallery: mapper(pictures.hits) }
+//             : { gallery: [...prevState.gallery, ...mapper(pictures.hits)] };
+//         });
+//       })
+//       .catch((err) => {
+//         console.log("Что-то пошло не так");
+//       })
+//       .finally(() => {
+
+//         this.setState({ isLoading: false });
+//         if (this.state.page > 1) {
+//           this.scroll();
+//         }
+//         if (this.state.gallery.length === 0) {
+//           this.setState({ ...INITIAL_STATE });
+//         }
+//       });
+//   };
+//   incrementPage = () => {
+//     let { page } = this.state;
+//     page += 1;
+//     this.setState({ page });
+//   };
+//   toggleModal = () => {
+
+//     this.setState(({ showModal }) => ({ showModal: !showModal }));
+//   };
+//   onClickPicture = (e) => {
+//     const newLargeImageURL = e.currentTarget.getAttribute("data-large-img");
+//     if (e.currentTarget.hasAttribute("data-list")) {
+//       this.toggleModal();
+//       this.setState(() => ({
+//         largeImageURL: newLargeImageURL,
+//       }));
+//     }
+//   };
+//   scroll = () => {
+//     window.scrollTo({
+//       top: document.documentElement.scrollHeight,
+//       behavior: "smooth",
+//     });
+//   };
+//   render() {
+//     const { isLoading, gallery, showModal, largeImageURL } = this.state;
+//     return (
+//       <>
+//         <Searchbar onSubmit={this.changeInputData} />
+
+//         {gallery && (
+//           <ImageGallery
+//             gallery={gallery}
+//             onClickPicture={this.onClickPicture}
+//           />
+//         )}
+//         {gallery && <Button onClick={this.incrementPage} />}
+//         {isLoading && <Loader />}
+//         {showModal && (
+//           <Modal onClose={this.toggleModal}>
+//             <img
+
+//               src={largeImageURL}
+//               alt="изображение pixabay"
+//             />
+//           </Modal>
+//         )}
+//       </>
+//     );
+//   }
+// }
