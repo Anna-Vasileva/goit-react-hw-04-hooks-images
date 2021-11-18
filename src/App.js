@@ -27,6 +27,7 @@ function App() {
       .then((res) => res.json())
       .then((pictures) => {
         setGallery((prevGallery) => {
+          if (!pictures.hits.length) return null;
           return !prevGallery
             ? mapper(pictures.hits)
             : [...prevGallery, ...mapper(pictures.hits)];
@@ -41,10 +42,6 @@ function App() {
         if (page > 1) {
           scroll();
         }
-        // if (gallery.length === 0) {
-        //   setPage(1);
-        //   setGallery(null);
-        // }
       });
   }, [query, page]);
 
